@@ -2,8 +2,19 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+
+// Dynamically import Syncfusion Grid component (client-side only)
+const OpportunityGrid = dynamic(() => import("@/components/OpportunityGrid"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex justify-center py-12">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+    </div>
+  ),
+});
 
 interface Opportunity {
   id: string;
@@ -28,10 +39,75 @@ const statusColors: Record<string, string> = {
   archived: "bg-gray-100 text-gray-700 dark:bg-gray-900 dark:text-gray-300",
 };
 
+// Demo data
+const DEMO_DATA: Opportunity[] = [
+  {
+    id: "demo-1",
+    title: "AI-Powered Recipe Generator",
+    problem_what: "Home cooks struggle to use ingredients before they expire",
+    problem_who: "Busy professionals who want to reduce food waste",
+    problem_success: "50% reduction in food waste, 3x recipe variety",
+    status: "exploring",
+    clarity_score: 0.85,
+    created_at: "2024-12-15T10:00:00Z",
+    updated_at: "2024-12-17T14:30:00Z",
+    tags: ["AI", "Food", "Sustainability"],
+  },
+  {
+    id: "demo-2",
+    title: "Mental Health Check-in Bot",
+    problem_what: "People don't recognize early signs of burnout",
+    problem_who: "Remote workers in high-stress industries",
+    problem_success: "Early intervention before burnout, 40% reduction in sick days",
+    status: "validated",
+    clarity_score: 0.92,
+    created_at: "2024-12-10T09:00:00Z",
+    updated_at: "2024-12-18T11:00:00Z",
+    tags: ["Health", "AI", "HR Tech"],
+  },
+  {
+    id: "demo-3",
+    title: "Local Business Discovery Platform",
+    problem_what: "Small businesses struggle to compete with big chains online",
+    problem_who: "Local shop owners and community-minded consumers",
+    problem_success: "30% increase in foot traffic for partner businesses",
+    status: "parked",
+    clarity_score: 0.67,
+    created_at: "2024-12-05T15:00:00Z",
+    updated_at: "2024-12-12T16:45:00Z",
+    tags: ["Local", "E-commerce", "Community"],
+  },
+  {
+    id: "demo-4",
+    title: "Smart Home Energy Optimizer",
+    problem_what: "Homeowners waste energy without realizing it",
+    problem_who: "Environmentally conscious homeowners with smart devices",
+    problem_success: "25% reduction in energy bills, carbon footprint tracking",
+    status: "exploring",
+    clarity_score: 0.78,
+    created_at: "2024-12-08T11:00:00Z",
+    updated_at: "2024-12-16T09:30:00Z",
+    tags: ["IoT", "Sustainability", "Smart Home"],
+  },
+  {
+    id: "demo-5",
+    title: "Freelancer Tax Assistant",
+    problem_what: "Freelancers miss deductions and overpay taxes",
+    problem_who: "Independent contractors and gig workers",
+    problem_success: "Average $2,000 savings per user, 90% time reduction",
+    status: "validated",
+    clarity_score: 0.88,
+    created_at: "2024-11-28T14:00:00Z",
+    updated_at: "2024-12-18T10:00:00Z",
+    tags: ["FinTech", "AI", "Productivity"],
+  },
+];
+
 export default function OpportunitiesPage() {
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
 
   useEffect(() => {
     fetchOpportunities();
@@ -46,45 +122,7 @@ export default function OpportunitiesPage() {
     } catch (err) {
       console.error("Error fetching opportunities:", err);
       setError("Could not load opportunities. The server might be starting up.");
-      // Show demo data for now
-      setOpportunities([
-        {
-          id: "demo-1",
-          title: "AI-Powered Recipe Generator",
-          problem_what: "Home cooks struggle to use ingredients before they expire",
-          problem_who: "Busy professionals who want to reduce food waste",
-          problem_success: "50% reduction in food waste, 3x recipe variety",
-          status: "exploring",
-          clarity_score: 0.85,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          tags: ["AI", "Food", "Sustainability"],
-        },
-        {
-          id: "demo-2",
-          title: "Mental Health Check-in Bot",
-          problem_what: "People don't recognize early signs of burnout",
-          problem_who: "Remote workers in high-stress industries",
-          problem_success: "Early intervention before burnout, 40% reduction in sick days",
-          status: "validated",
-          clarity_score: 0.92,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          tags: ["Health", "AI", "HR Tech"],
-        },
-        {
-          id: "demo-3",
-          title: "Local Business Discovery Platform",
-          problem_what: "Small businesses struggle to compete with big chains online",
-          problem_who: "Local shop owners and community-minded consumers",
-          problem_success: "30% increase in foot traffic for partner businesses",
-          status: "parked",
-          clarity_score: 0.67,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          tags: ["Local", "E-commerce", "Community"],
-        },
-      ]);
+      setOpportunities(DEMO_DATA);
     } finally {
       setIsLoading(false);
     }
@@ -117,6 +155,29 @@ export default function OpportunitiesPage() {
             </Link>
           </div>
           <div className="flex items-center gap-3">
+            {/* View Toggle */}
+            <div className="flex rounded-lg border overflow-hidden">
+              <button
+                onClick={() => setViewMode("cards")}
+                className={`px-3 py-1.5 text-sm transition-colors ${
+                  viewMode === "cards"
+                    ? "bg-blue-600 text-white"
+                    : "bg-white text-slate-600 hover:bg-slate-50"
+                }`}
+              >
+                Cards
+              </button>
+              <button
+                onClick={() => setViewMode("table")}
+                className={`px-3 py-1.5 text-sm transition-colors ${
+                  viewMode === "table"
+                    ? "bg-blue-600 text-white"
+                    : "bg-white text-slate-600 hover:bg-slate-50"
+                }`}
+              >
+                Table
+              </button>
+            </div>
             <Link href="/">
               <Button variant="outline" size="sm">
                 Back to Chat
@@ -168,12 +229,18 @@ export default function OpportunitiesPage() {
           </div>
         )}
 
-        {/* Opportunities Grid */}
+        {/* Loading State */}
         {isLoading ? (
           <div className="flex justify-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
           </div>
+        ) : viewMode === "table" ? (
+          /* Syncfusion DataGrid View */
+          <Card className="p-4 overflow-hidden">
+            <OpportunityGrid data={opportunities} />
+          </Card>
         ) : (
+          /* Card View */
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {opportunities.map((opp) => (
               <Card
@@ -245,9 +312,11 @@ export default function OpportunitiesPage() {
                       {Math.round(opp.clarity_score * 100)}%
                     </span>
                   </div>
-                  <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700">
-                    Deep Dive →
-                  </Button>
+                  <Link href={`/opportunities/${opp.id}`}>
+                    <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700">
+                      Deep Dive →
+                    </Button>
+                  </Link>
                 </div>
               </Card>
             ))}
