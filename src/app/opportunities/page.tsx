@@ -5,6 +5,8 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { SmartPasteResult } from "@/lib/ai-service";
 
 // Dynamically import Syncfusion Grid component (client-side only)
 const OpportunityGrid = dynamic(() => import("@/components/OpportunityGrid"), {
@@ -16,17 +18,35 @@ const OpportunityGrid = dynamic(() => import("@/components/OpportunityGrid"), {
   ),
 });
 
+// Dynamically import AI-enhanced components
+const OpportunityCharts = dynamic(() => import("@/components/OpportunityCharts"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-64 bg-slate-100 dark:bg-slate-800 rounded animate-pulse" />
+  ),
+});
+
+const SmartPasteForm = dynamic(() => import("@/components/SmartPasteForm"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-48 bg-slate-100 dark:bg-slate-800 rounded animate-pulse" />
+  ),
+});
+
 interface Opportunity {
   id: string;
-  title: string;
-  problem_what: string;
-  problem_who: string;
-  problem_success: string;
-  status: "exploring" | "validated" | "parked" | "archived";
-  clarity_score: number;
+  name: string;
+  description: string;
+  problem_statement?: string;
+  target_audience?: string;
+  domains: string[];
+  csio_score?: number;
+  priority: string;
+  status: string;
+  tags: string[];
   created_at: string;
   updated_at: string;
-  tags: string[];
+  deep_dive_count: number;
 }
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://mindrian-api.onrender.com";
@@ -39,67 +59,82 @@ const statusColors: Record<string, string> = {
   archived: "bg-gray-100 text-gray-700 dark:bg-gray-900 dark:text-gray-300",
 };
 
-// Demo data
+// Demo data matching backend API structure
 const DEMO_DATA: Opportunity[] = [
   {
     id: "demo-1",
-    title: "AI-Powered Recipe Generator",
-    problem_what: "Home cooks struggle to use ingredients before they expire",
-    problem_who: "Busy professionals who want to reduce food waste",
-    problem_success: "50% reduction in food waste, 3x recipe variety",
+    name: "AI-Powered Recipe Generator",
+    description: "App that suggests recipes based on ingredients you have",
+    problem_statement: "Home cooks struggle to use ingredients before they expire",
+    target_audience: "Busy professionals who want to reduce food waste",
+    domains: ["AI", "Food Tech"],
+    csio_score: 0.85,
+    priority: "high",
     status: "exploring",
-    clarity_score: 0.85,
+    tags: ["AI", "Food", "Sustainability"],
     created_at: "2024-12-15T10:00:00Z",
     updated_at: "2024-12-17T14:30:00Z",
-    tags: ["AI", "Food", "Sustainability"],
+    deep_dive_count: 2,
   },
   {
     id: "demo-2",
-    title: "Mental Health Check-in Bot",
-    problem_what: "People don't recognize early signs of burnout",
-    problem_who: "Remote workers in high-stress industries",
-    problem_success: "Early intervention before burnout, 40% reduction in sick days",
+    name: "Mental Health Check-in Bot",
+    description: "AI companion that monitors wellbeing patterns",
+    problem_statement: "People don't recognize early signs of burnout",
+    target_audience: "Remote workers in high-stress industries",
+    domains: ["Health Tech", "AI"],
+    csio_score: 0.92,
+    priority: "high",
     status: "validated",
-    clarity_score: 0.92,
+    tags: ["Health", "AI", "HR Tech"],
     created_at: "2024-12-10T09:00:00Z",
     updated_at: "2024-12-18T11:00:00Z",
-    tags: ["Health", "AI", "HR Tech"],
+    deep_dive_count: 5,
   },
   {
     id: "demo-3",
-    title: "Local Business Discovery Platform",
-    problem_what: "Small businesses struggle to compete with big chains online",
-    problem_who: "Local shop owners and community-minded consumers",
-    problem_success: "30% increase in foot traffic for partner businesses",
+    name: "Local Business Discovery Platform",
+    description: "Connecting local shops with community consumers",
+    problem_statement: "Small businesses struggle to compete with big chains online",
+    target_audience: "Local shop owners and community-minded consumers",
+    domains: ["E-commerce", "Local"],
+    csio_score: 0.67,
+    priority: "medium",
     status: "parked",
-    clarity_score: 0.67,
+    tags: ["Local", "E-commerce", "Community"],
     created_at: "2024-12-05T15:00:00Z",
     updated_at: "2024-12-12T16:45:00Z",
-    tags: ["Local", "E-commerce", "Community"],
+    deep_dive_count: 1,
   },
   {
     id: "demo-4",
-    title: "Smart Home Energy Optimizer",
-    problem_what: "Homeowners waste energy without realizing it",
-    problem_who: "Environmentally conscious homeowners with smart devices",
-    problem_success: "25% reduction in energy bills, carbon footprint tracking",
+    name: "Smart Home Energy Optimizer",
+    description: "Automated energy management for connected homes",
+    problem_statement: "Homeowners waste energy without realizing it",
+    target_audience: "Environmentally conscious homeowners with smart devices",
+    domains: ["IoT", "CleanTech"],
+    csio_score: 0.78,
+    priority: "medium",
     status: "exploring",
-    clarity_score: 0.78,
+    tags: ["IoT", "Sustainability", "Smart Home"],
     created_at: "2024-12-08T11:00:00Z",
     updated_at: "2024-12-16T09:30:00Z",
-    tags: ["IoT", "Sustainability", "Smart Home"],
+    deep_dive_count: 0,
   },
   {
     id: "demo-5",
-    title: "Freelancer Tax Assistant",
-    problem_what: "Freelancers miss deductions and overpay taxes",
-    problem_who: "Independent contractors and gig workers",
-    problem_success: "Average $2,000 savings per user, 90% time reduction",
+    name: "Freelancer Tax Assistant",
+    description: "AI-powered tax optimization for self-employed",
+    problem_statement: "Freelancers miss deductions and overpay taxes",
+    target_audience: "Independent contractors and gig workers",
+    domains: ["FinTech", "AI"],
+    csio_score: 0.88,
+    priority: "high",
     status: "validated",
-    clarity_score: 0.88,
+    tags: ["FinTech", "AI", "Productivity"],
     created_at: "2024-11-28T14:00:00Z",
     updated_at: "2024-12-18T10:00:00Z",
-    tags: ["FinTech", "AI", "Productivity"],
+    deep_dive_count: 3,
   },
 ];
 
@@ -108,6 +143,8 @@ export default function OpportunitiesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
+  const [showSmartPaste, setShowSmartPaste] = useState(false);
+  const [showCharts, setShowCharts] = useState(true);
 
   useEffect(() => {
     fetchOpportunities();
@@ -132,6 +169,49 @@ export default function OpportunitiesPage() {
     if (score >= 0.8) return "text-green-600";
     if (score >= 0.5) return "text-yellow-600";
     return "text-red-600";
+  };
+
+  // Handle smart paste opportunity creation
+  const handleSmartPasteCreate = async (data: SmartPasteResult) => {
+    try {
+      const response = await fetch(`${API_URL}/api/v1/opportunities`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: data.title,
+          description: data.description,
+          problem_statement: data.problem_statement,
+          target_audience: data.target_audience,
+          tags: data.tags || [],
+          priority: data.priority || "medium",
+          status: "exploring",
+        }),
+      });
+
+      if (response.ok) {
+        setShowSmartPaste(false);
+        fetchOpportunities(); // Refresh the list
+      }
+    } catch (error) {
+      console.error("Failed to create opportunity:", error);
+      // Add to local state as fallback
+      const newOpp: Opportunity = {
+        id: `local-${Date.now()}`,
+        name: data.title || "New Opportunity",
+        description: data.description || "",
+        problem_statement: data.problem_statement,
+        target_audience: data.target_audience,
+        domains: [],
+        tags: data.tags || [],
+        priority: data.priority || "medium",
+        status: "exploring",
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        deep_dive_count: 0,
+      };
+      setOpportunities([newOpp, ...opportunities]);
+      setShowSmartPaste(false);
+    }
   };
 
   return (
@@ -178,20 +258,54 @@ export default function OpportunitiesPage() {
                 Table
               </button>
             </div>
+            <Button
+              variant={showCharts ? "default" : "outline"}
+              size="sm"
+              onClick={() => setShowCharts(!showCharts)}
+            >
+              {showCharts ? "Hide" : "Show"} Analytics
+            </Button>
             <Link href="/">
               <Button variant="outline" size="sm">
                 Back to Chat
               </Button>
             </Link>
-            <Button size="sm" className="bg-gradient-to-r from-blue-600 to-purple-600">
-              + New Opportunity
+            <ThemeToggle />
+            <Button
+              size="sm"
+              className="bg-gradient-to-r from-blue-600 to-purple-600"
+              onClick={() => setShowSmartPaste(true)}
+            >
+              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              </svg>
+              Smart Paste
             </Button>
           </div>
         </div>
       </header>
 
+      {/* Smart Paste Modal */}
+      {showSmartPaste && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="max-w-2xl w-full">
+            <SmartPasteForm
+              onOpportunityCreated={handleSmartPasteCreate}
+              onCancel={() => setShowSmartPaste(false)}
+            />
+          </div>
+        </div>
+      )}
+
       {/* Main Content */}
       <main className="max-w-6xl mx-auto px-4 py-8">
+        {/* AI Analytics Dashboard */}
+        {showCharts && opportunities.length > 0 && (
+          <div className="mb-8">
+            <OpportunityCharts opportunities={opportunities} />
+          </div>
+        )}
+
         {/* Stats Row */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <Card className="p-4 text-center">
@@ -213,12 +327,12 @@ export default function OpportunitiesPage() {
           <Card className="p-4 text-center">
             <div className="text-3xl font-bold text-purple-600">
               {Math.round(
-                (opportunities.reduce((sum, o) => sum + o.clarity_score, 0) /
+                (opportunities.reduce((sum, o) => sum + (o.csio_score || 0), 0) /
                   opportunities.length) *
                   100
               ) || 0}%
             </div>
-            <div className="text-sm text-slate-500">Avg Clarity</div>
+            <div className="text-sm text-slate-500">Avg CSIO Score</div>
           </Card>
         </div>
 
@@ -250,35 +364,38 @@ export default function OpportunitiesPage() {
                 {/* Header */}
                 <div className="flex items-start justify-between mb-3">
                   <h3 className="font-semibold text-lg text-slate-900 dark:text-slate-100 group-hover:text-blue-600 transition-colors">
-                    {opp.title}
+                    {opp.name}
                   </h3>
                   <span
-                    className={`text-xs px-2 py-1 rounded-full ${statusColors[opp.status]}`}
+                    className={`text-xs px-2 py-1 rounded-full ${statusColors[opp.status] || "bg-gray-100 text-gray-700"}`}
                   >
                     {opp.status}
                   </span>
                 </div>
 
-                {/* Problem Definition */}
+                {/* Description */}
+                <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">
+                  {opp.description}
+                </p>
+
+                {/* Problem & Target */}
                 <div className="space-y-2 mb-4 text-sm">
-                  <div>
-                    <span className="text-slate-500">What: </span>
-                    <span className="text-slate-700 dark:text-slate-300">
-                      {opp.problem_what}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-slate-500">Who: </span>
-                    <span className="text-slate-700 dark:text-slate-300">
-                      {opp.problem_who}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-slate-500">Success: </span>
-                    <span className="text-slate-700 dark:text-slate-300">
-                      {opp.problem_success}
-                    </span>
-                  </div>
+                  {opp.problem_statement && (
+                    <div>
+                      <span className="text-slate-500">Problem: </span>
+                      <span className="text-slate-700 dark:text-slate-300">
+                        {opp.problem_statement}
+                      </span>
+                    </div>
+                  )}
+                  {opp.target_audience && (
+                    <div>
+                      <span className="text-slate-500">Target: </span>
+                      <span className="text-slate-700 dark:text-slate-300">
+                        {opp.target_audience}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Tags */}
@@ -296,21 +413,30 @@ export default function OpportunitiesPage() {
                 {/* Footer */}
                 <div className="flex items-center justify-between pt-3 border-t">
                   <div className="flex items-center gap-2">
-                    <div className="w-16 h-2 bg-slate-200 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full ${
-                          opp.clarity_score >= 0.8
-                            ? "bg-green-500"
-                            : opp.clarity_score >= 0.5
-                            ? "bg-yellow-500"
-                            : "bg-red-500"
-                        }`}
-                        style={{ width: `${opp.clarity_score * 100}%` }}
-                      />
-                    </div>
-                    <span className={`text-xs font-medium ${getClarityColor(opp.clarity_score)}`}>
-                      {Math.round(opp.clarity_score * 100)}%
-                    </span>
+                    {opp.csio_score !== undefined && (
+                      <>
+                        <div className="w-16 h-2 bg-slate-200 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full ${
+                              opp.csio_score >= 0.8
+                                ? "bg-green-500"
+                                : opp.csio_score >= 0.5
+                                ? "bg-yellow-500"
+                                : "bg-red-500"
+                            }`}
+                            style={{ width: `${opp.csio_score * 100}%` }}
+                          />
+                        </div>
+                        <span className={`text-xs font-medium ${getClarityColor(opp.csio_score)}`}>
+                          {Math.round(opp.csio_score * 100)}%
+                        </span>
+                      </>
+                    )}
+                    {opp.deep_dive_count > 0 && (
+                      <span className="text-xs text-slate-400 ml-2">
+                        {opp.deep_dive_count} dive{opp.deep_dive_count > 1 ? "s" : ""}
+                      </span>
+                    )}
                   </div>
                   <Link href={`/opportunities/${opp.id}`}>
                     <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700">

@@ -2,11 +2,20 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar } from "@/components/ui/avatar";
+import { ThemeToggle } from "@/components/ThemeToggle";
+
+// Dynamically import SmartChatInput (client-side only)
+const SmartChatInput = dynamic(() => import("@/components/SmartChatInput"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-[52px] bg-slate-100 dark:bg-slate-800 rounded animate-pulse" />
+  ),
+});
 
 interface Message {
   id: string;
@@ -28,7 +37,7 @@ export default function Home() {
   useEffect(() => {
     const initSession = async () => {
       try {
-        const response = await fetch(`${API_URL}/api/v1/chat/sessions`, {
+        const response = await fetch(`${API_URL}/api/v1/sessions`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ agent_type: "larry" }),
@@ -66,7 +75,7 @@ export default function Home() {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${API_URL}/api/v1/chat/message`, {
+      const response = await fetch(`${API_URL}/api/v1/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -99,13 +108,6 @@ export default function Home() {
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
-  };
-
   return (
     <div className="flex min-h-screen flex-col bg-gradient-to-b from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900">
       {/* Header */}
@@ -130,6 +132,7 @@ export default function Home() {
                 Bank of Opportunities
               </Button>
             </Link>
+            <ThemeToggle />
             <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
               Larry Active
             </span>
@@ -225,29 +228,17 @@ export default function Home() {
         </ScrollArea>
       </main>
 
-      {/* Input Area */}
+      {/* Input Area - Smart Chat Input with AI Autocomplete */}
       <footer className="border-t bg-white/80 backdrop-blur-sm dark:bg-slate-900/80 sticky bottom-0">
         <div className="max-w-4xl mx-auto px-4 py-4">
-          <div className="flex gap-3">
-            <Textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="What's on your mind?"
-              className="flex-1 min-h-[52px] max-h-[200px] resize-none"
-              disabled={isLoading}
-            />
-            <Button
-              onClick={sendMessage}
-              disabled={!input.trim() || isLoading}
-              className="h-[52px] px-6 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-            >
-              {isLoading ? "..." : "Send"}
-            </Button>
-          </div>
-          <p className="text-xs text-center text-slate-400 mt-2">
-            Press Enter to send, Shift+Enter for new line
-          </p>
+          <SmartChatInput
+            value={input}
+            onChange={setInput}
+            onSend={sendMessage}
+            disabled={isLoading}
+            placeholder="What's on your mind?"
+            userRole="entrepreneur exploring a business opportunity"
+          />
         </div>
       </footer>
     </div>
