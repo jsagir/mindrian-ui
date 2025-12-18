@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
@@ -123,9 +124,16 @@ export default function Home() {
               </p>
             </div>
           </div>
-          <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
-            Larry Active
-          </span>
+          <div className="flex items-center gap-2">
+            <Link href="/opportunities">
+              <Button variant="outline" size="sm">
+                Bank of Opportunities
+              </Button>
+            </Link>
+            <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
+              Larry Active
+            </span>
+          </div>
         </div>
       </header>
 
